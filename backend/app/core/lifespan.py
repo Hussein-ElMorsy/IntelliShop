@@ -5,7 +5,7 @@ from app.db.session import engine
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIteratorprint("Starting IntelliShop🔛")
+async def lifespan(app: FastAPI) -> AsyncIteratorprint("Starting IntelliShop🔛"):
     yield
     engine.dispose()
     print("Stopping IntelliShop🔚")
