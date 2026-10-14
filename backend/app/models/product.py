@@ -1,6 +1,7 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
-from sqlalchemy import Boolean, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, ForeignKey, Numeric, String, Text, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
@@ -50,3 +51,16 @@ class Product(Base):
     category: Mapped["Category"] = relationship(
         back_populates="products"
     )
+
+    created_at: Mapped[datetime] = mapped_column(
+    DateTime(timezone=True),
+    server_default=func.now(),
+    nullable=False,
+    )   
+    
+    updated_at: Mapped[datetime] = mapped_column(
+    DateTime(timezone=True),
+    server_default=func.now(),
+    onupdate=func.now(),
+    nullable=False,
+)

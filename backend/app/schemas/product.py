@@ -1,5 +1,6 @@
 from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime
 
 
 class ProductCreate(BaseModel):
@@ -63,7 +64,16 @@ class ProductResponse(BaseModel):
     stock_quantity: int
     is_active: bool
     category_id: int
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(
         from_attributes=True
     )
+
+class ProductListResponse(BaseModel):
+    items: list[ProductResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

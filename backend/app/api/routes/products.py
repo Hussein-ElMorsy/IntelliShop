@@ -8,10 +8,16 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 from app.db.session import get_db
+from decimal import Decimal
 from app.schemas.product import (
     ProductCreate,
+    ProductListResponse,
     ProductResponse,
     ProductUpdate,
+)
+from app.schemas.product_query import (
+    ProductSortField,
+    SortOrder,
 )
 from app.services.product import (
     category_exists,
@@ -54,33 +60,72 @@ def create_product_endpoint(
 
 @router.get(
     "",
-    response_model=list[ProductResponse],
+    response_model=ProductListResponse,
 )
 def get_products_endpoint(
-    offset: int = Query(
-        default=0,
-        ge=0,
+    page: int = Query(
+        default=1,
+        ge=1,
     ),
-    limit: int = Query(
+    page_size: int = Query(
         default=20,
         ge=1,
         le=100,
+    ),
+    search: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=200,
     ),
     category_id: int | None = Query(
         default=None,
         gt=0,
     ),
+    min_price: Decimal | None = Query(
+        default=None,
+        ge=0,
+    ),
+    max_price: Decimal | None = Query(
+        default=None,
+        ge=0,
+    ),
+    in_stock: bool | None = Query(
+        default=None,
+    ),
     is_active: bool | None = Query(
         default=True,
     ),
+    sort_by: ProductSortField = Query(
+        default=ProductSortField.name,
+    ),
+    sort_order: SortOrder = Query(
+        default=SortOrder.asc,
+    ),
     db: Session = Depends(get_db),
-) -> list:
+) -> ProductListResponse:
+
+    if (
+        min_price is not None
+        and max_price is not None
+        and min_price > max_price
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="min_price cannot be greater than max_price.",
+        )
+
     return get_products(
         db=db,
-        offset=offset,
-        limit=limit,
+        page=page,
+        page_size=page_size,
+        search=search,
         category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
         is_active=is_active,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
 
 
