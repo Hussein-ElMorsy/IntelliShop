@@ -164,3 +164,113 @@ def add_item_to_cart(
         db=db,
         user_id=user_id,
     )
+
+def get_cart_item(
+    db: Session,
+    user_id: int,
+    item_id: int,
+) -> CartItem | None:
+
+    statement = (
+        select(CartItem)
+        .join(Cart)
+        .where(
+            CartItem.id == item_id,
+            Cart.user_id == user_id,
+        )
+    )
+
+    return db.scalar(statement)
+
+
+def update_cart_item_quantity(
+    db: Session,
+    user_id: int,
+    item_id: int,
+    quantity: int,
+) -> Cart:
+
+    item = get_cart_item(
+        db=db,
+        user_id=user_id,
+        item_id=item_id,
+    )
+
+    if item is None:
+        raise ValueError(
+            "CART_ITEM_NOT_FOUND"
+        )
+
+    product = db.get(
+        Product,
+        item.product_id,
+    )
+
+    if product is None:
+        raise ValueError(
+            "PRODUCT_NOT_FOUND"
+        )
+
+    if not product.is_active:
+        raise ValueError(
+            "PRODUCT_INACTIVE"
+        )
+
+    if product.stock_quantity < quantity:
+        raise ValueError(
+            "INSUFFICIENT_STOCK"
+        )
+
+    item.quantity = quantity
+
+    db.commit()
+
+    return get_cart_with_items(
+        db=db,
+        user_id=user_id,
+    )
+
+def remove_cart_item(
+    db: Session,
+    user_id: int,
+    item_id: int,
+) -> Cart:
+
+    item = get_cart_item(
+        db=db,
+        user_id=user_id,
+        item_id=item_id,
+    )
+
+    if item is None:
+        raise ValueError(
+            "CART_ITEM_NOT_FOUND"
+        )
+
+    db.delete(item)
+    db.commit()
+
+    return get_cart_with_items(
+        db=db,
+        user_id=user_id,
+    )
+
+def clear_cart(
+    db: Session,
+    user_id: int,
+) -> Cart:
+
+    cart = get_cart_with_items(
+        db=db,
+        user_id=user_id,
+    )
+
+    for item in cart.items:
+        db.delete(item)
+
+    db.commit()
+
+    return get_cart_with_items(
+        db=db,
+        user_id=user_id,
+    )
